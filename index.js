@@ -15,6 +15,14 @@ const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
 });
+
+const guessedContentType = (() => {
+  if (url.endsWith(".m3u8")) return "application/vnd.apple.mpegurl";
+  if (url.endsWith(".ts")) return "video/mp2t";
+  if (url.endsWith(".vtt")) return "text/vtt";
+  return "application/octet-stream";
+})();
+
 app.use(limiter);
 
 // Middleware
@@ -47,8 +55,7 @@ app.get("/proxy", async (req, res) => {
     });
 
     res.set({
-      "Content-Type":
-        response.headers["content-type"] || "application/octet-stream",
+      "Content-Type": response.headers["content-type"] || guessedContentType,
       "Cache-Control": "public, max-age=86400",
     });
     res.send(Buffer.from(response.data));
