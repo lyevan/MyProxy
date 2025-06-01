@@ -61,45 +61,53 @@ app.get("/proxy", async (req, res) => {
     const url = decodeURIComponent(req.query.url);
     if (!url) return res.status(400).send("Missing URL parameter");
 
+    // Special handling for megastatics subtitles
+    if (url.includes('megastatics.com')) {
+      const response = await axios({
+        method: 'get',
+        url: url,
+        responseType: 'stream',
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+          'Accept': 'text/vtt, */*',
+          'Referer': 'https://megastatics.com/',
+          'Origin': 'https://megastatics.com/'
+        }
+      });
+
+      // Pipe the subtitle stream directly
+      res.set({
+        'Content-Type': 'text/vtt; charset=utf-8',
+        'Cache-Control': 'public, max-age=3600',
+        'Access-Control-Allow-Origin': '*'
+      });
+      return response.data.pipe(res);
+    }
+
+    // Original HLS handling
     const response = await axios.get(url, {
       responseType: 'arraybuffer',
       headers: {
         'User-Agent': 'Mozilla/5.0',
         'Accept': '*/*',
-        'Referer': new URL(url).origin,
-        'Origin': new URL(url).origin,
-        'Range': req.headers.range || ''
-      },
-      timeout: 25000 // 25s timeout (under Railway's 30s limit)
+        'Referer': new URL(url).origin
+      }
     });
 
     const contentType = getContentType(url, response.headers);
     res.set('Content-Type', contentType);
 
-    // Special handling for HLS playlists
     if (contentType.includes('mpegurl')) {
       const rewritten = rewriteHlsUrls(response.data.toString(), url);
       return res.send(rewritten);
     }
 
-    // Special handling for subtitles
-    if (contentType.includes('vtt') || contentType.includes('x-ass')) {
-      res.set('Cache-Control', 'public, max-age=3600'); // 1 hour cache
-      return res.send(response.data.toString());
-    }
-
-    // Default handling for TS segments and other files
-    res.set('Cache-Control', 'public, max-age=86400'); // 1 day cache
+    res.set('Cache-Control', 'public, max-age=86400');
     res.send(Buffer.from(response.data));
 
   } catch (err) {
-    console.error(`Proxy error for ${req.query.url}:`, err.message);
-    
-    if (err.response?.status === 410) {
-      return res.status(410).send("Stream URL has expired");
-    }
-    
-    res.status(500).send("Proxy error: " + err.message);
+    console.error(`Proxy error: ${err.message}`);
+    res.status(500).send("Proxy error");
   }
 });
 
