@@ -71,7 +71,11 @@ app.get("/proxy", async (req, res) => {
           'User-Agent': 'Mozilla/5.0',
           'Accept': 'text/vtt, */*',
           'Referer': 'https://megastatics.com/',
-          'Origin': 'https://megastatics.com/'
+          'Origin': 'https://megastatics.com/',
+            'Accept-Language': 'en-US,en;q=0.9',
+  'Sec-Fetch-Dest': 'empty',
+  'Sec-Fetch-Mode': 'cors',
+  'Sec-Fetch-Site': 'cross-site'
         }
       });
 
