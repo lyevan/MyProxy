@@ -11,6 +11,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+//Try to load environment variables from .env file
 // Middleware for compression
 app.use(compression());
 
