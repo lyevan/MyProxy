@@ -28,7 +28,7 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use(limiter);
+//  app.use(limiter);
 
 // Content type detector
 const getContentType = (url, headers) => {
