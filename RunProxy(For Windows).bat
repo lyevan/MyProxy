@@ -1,0 +1,1 @@
+start "" /MIN cmd /c "npm start"
